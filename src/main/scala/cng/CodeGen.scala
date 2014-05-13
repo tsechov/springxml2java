@@ -5,11 +5,9 @@ import com.sun.codemodel.{JExpr, JDefinedClass, JMod, JCodeModel}
 import BeanNode._
 import java.io.File
 
-/**
- * User: amocsanyi
- */
+
 object CodeGen {
-  def generateConfigClasses(sourceRoot: String, moduleName: String, packageName: String, beans: NodeSeq): Unit = {
+  def generateConfigClasses(sourceRoot: String, moduleName: String, packageName: String, beans: NodeSeq)(implicit config:Config): Unit = {
     val codeModel = new JCodeModel();
 
     val classNamePrefix = moduleName.capitalize
@@ -24,16 +22,19 @@ object CodeGen {
     result._1.build(new File(sourceRoot + File.separator + "main" + File.separator + "java"))
   }
 
-  def generateConfigBean(in: (JCodeModel, JDefinedClass), n: Node): (JCodeModel, JDefinedClass) = {
+  def generateConfigBean(in: (JCodeModel, JDefinedClass), n: Node)(implicit config:Config): (JCodeModel, JDefinedClass) = {
     println(n)
     val key = n.key
     val relativeUrl = n.relativeUrl
     val dtoClass = in._1.directClass(n.className)
 
-    val dtoMethod = in._2.method(JMod.PRIVATE, dtoClass, "webProviderDto")
+    val dtoMethod = in._2.method(JMod.PRIVATE, dtoClass, "webProviderDto"+(key.split('.').last).filterNot( _ == '_'))
     dtoMethod.annotate(in._1.directClass("org.springframework.context.annotation.Bean"))
-    val block = dtoMethod.body();
-    block._return(JExpr._new(dtoClass));
+
+    val configKeyClass=in._1.directClass(config.configKeyClass)
+    val configKey=JExpr._new(configKeyClass).arg(key)
+    val url=JExpr.direct(relativeUrl)
+    dtoMethod.body()._return(JExpr._new(dtoClass).arg(configKey).arg(url))
     in
 
 

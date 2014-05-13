@@ -7,27 +7,30 @@ import scala.xml.transform.{RuleTransformer, RewriteRule}
 import BeanNode._
 
 
-case class Config(directory: File = new File("."))
+case class Config(directory: File = new File("."), configKeyClass: String = "")
 
 object Main extends App {
 
   val parser = new scopt.OptionParser[Config]("springconfigreplace") {
     head("springconfigreplace", "1.0")
     opt[File]('d', "directory") required() valueName ("<file>") action {
-      (x, c) =>
-        c.copy(directory = x)
+      (x, c) => c.copy(directory = x)
     } text ("directory is a required file property")
+    opt[String]('c', "configkeyclass") required() valueName ("<fully qualified classname>") action {
+      (x, c) => c.copy(configKeyClass = x)
+    } text ("fully qualified name of the config key class")
   }
 
 
   parser.parse(args, Config()).fold({})({
-    config => {
+    implicit config => {
+
       println(s"working in: ${config.directory}")
       FileList.getFileTree(config.directory)
         .filter(properFileName)
         .filter(springXml)
         .flatMap(hasTargetBean)
-        .filter(!_._2._2.isEmpty)
+        .filterNot(_._2._2.isEmpty)
         .map(generateCode)
         .map(removeNodes)
         .foreach {
@@ -63,17 +66,17 @@ object Main extends App {
   }
 
 
-  def generateCode(in: (File, (Elem, NodeSeq))): (File, Elem) = {
+  def generateCode(in: (File, (Elem, NodeSeq)))(implicit config:Config): (File, Elem) = {
     val xmlPath = in._1.getAbsolutePath.split(File.separatorChar)
     val sourceRoot = xmlPath.takeWhile(_ != "main").mkString(File.separator)
-    val moduleNameComponents=xmlPath.takeWhile(_ != "src").last.split('-')
+    val moduleNameComponents = xmlPath.takeWhile(_ != "src").last.split('-')
     val moduleName = moduleNameComponents.foldLeft("")((accu: String, elem: String) => accu match {
       case "" => elem
       case "crossng" => elem
       case s: String => accu + elem.capitalize
     })
 
-    val packageName: String = moduleNameComponents :+ "moduleconfig" mkString(".")
+    val packageName: String = moduleNameComponents :+ "moduleconfig" mkString (".")
     CodeGen.generateConfigClasses(sourceRoot, moduleName, packageName, in._2._2)
     (in._1, in._2._1)
   }
