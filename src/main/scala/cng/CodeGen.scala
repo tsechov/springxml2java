@@ -28,7 +28,7 @@ object CodeGen {
     val relativeUrl = n.relativeUrl
     val dtoClass = in._1.directClass(n.className)
 
-    val dtoMethod = in._2.method(JMod.PRIVATE, dtoClass, "webProviderDto"+(key.split('.').last).filterNot( _ == '_'))
+    val dtoMethod = in._2.method(JMod.NONE, dtoClass, "webProviderDto"+(key.split('.').last).filterNot( _ == '_'))
     dtoMethod.annotate(in._1.directClass("org.springframework.context.annotation.Bean"))
 
 
