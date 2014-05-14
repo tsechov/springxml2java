@@ -16,14 +16,11 @@ object Main extends App {
     opt[File]('d', "directory") required() valueName ("<file>") action {
       (x, c) => c.copy(directory = x)
     } text ("directory is a required file property")
-    opt[String]('c', "configkeyclass") required() valueName ("<fully qualified classname>") action {
-      (x, c) => c.copy(configKeyClass = x)
-    } text ("fully qualified name of the config key class")
   }
 
 
   parser.parse(args, Config()).fold({})({
-    implicit config => {
+     config => {
 
       println(s"working in: ${config.directory}")
       FileList.getFileTree(config.directory)
@@ -33,9 +30,7 @@ object Main extends App {
         .filterNot(_._2._2.isEmpty)
         .map(generateCode)
         .map(removeNodes)
-        .foreach {
-        println _
-      }
+        .foreach(println)
     }
   })
 
@@ -53,7 +48,7 @@ object Main extends App {
     //val xmlDefinition=scala.io.Source.fromFile(file).getLines().find( _.startsWith("<?xml"))
     val root = scala.xml.XML.loadFile(file)
     val targetBeans = (root \\ "bean") filter isDomainDataWebProviderDTO
-    Map(file ->(root, targetBeans))
+    Map(file -> (root, targetBeans))
   }
 
 
@@ -66,7 +61,7 @@ object Main extends App {
   }
 
 
-  def generateCode(in: (File, (Elem, NodeSeq)))(implicit config:Config): (File, Elem) = {
+  def generateCode(in: (File, (Elem, NodeSeq))): (File, Elem) = {
     val xmlPath = in._1.getAbsolutePath.split(File.separatorChar)
     val sourceRoot = xmlPath.takeWhile(_ != "main").mkString(File.separator)
     val moduleNameComponents = xmlPath.takeWhile(_ != "src").last.split('-')

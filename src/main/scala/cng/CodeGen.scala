@@ -7,7 +7,7 @@ import java.io.File
 
 
 object CodeGen {
-  def generateConfigClasses(sourceRoot: String, moduleName: String, packageName: String, beans: NodeSeq)(implicit config:Config): Unit = {
+  def generateConfigClasses(sourceRoot: String, moduleName: String, packageName: String, beans: NodeSeq): Unit = {
     val codeModel = new JCodeModel();
 
     val classNamePrefix = moduleName.capitalize
@@ -22,7 +22,7 @@ object CodeGen {
     result._1.build(new File(sourceRoot + File.separator + "main" + File.separator + "java"))
   }
 
-  def generateConfigBean(in: (JCodeModel, JDefinedClass), n: Node)(implicit config:Config): (JCodeModel, JDefinedClass) = {
+  def generateConfigBean(in: (JCodeModel, JDefinedClass), n: Node): (JCodeModel, JDefinedClass) = {
     println(n)
     val key = n.key
     val relativeUrl = n.relativeUrl
@@ -31,8 +31,8 @@ object CodeGen {
     val dtoMethod = in._2.method(JMod.PRIVATE, dtoClass, "webProviderDto"+(key.split('.').last).filterNot( _ == '_'))
     dtoMethod.annotate(in._1.directClass("org.springframework.context.annotation.Bean"))
 
-    val configKeyClass=in._1.directClass(config.configKeyClass)
-    val configKey=JExpr._new(configKeyClass).arg(key)
+
+    val configKey=JExpr.direct(key)
     val url=JExpr.direct(relativeUrl)
     dtoMethod.body()._return(JExpr._new(dtoClass).arg(configKey).arg(url))
     in
