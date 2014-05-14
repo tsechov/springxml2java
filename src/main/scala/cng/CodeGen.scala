@@ -23,7 +23,7 @@ object CodeGen {
   }
 
   def generateConfigBean(in: (JCodeModel, JDefinedClass), n: Node): (JCodeModel, JDefinedClass) = {
-    println(n)
+
     val key = n.key
     val relativeUrl = n.relativeUrl
     val dtoClass = in._1.directClass(n.className)

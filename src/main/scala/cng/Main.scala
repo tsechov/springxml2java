@@ -19,6 +19,8 @@ object Main extends App {
   }
 
 
+
+
   parser.parse(args, Config()).fold({})({
      config => {
 
@@ -30,9 +32,14 @@ object Main extends App {
         .filterNot(_._2._2.isEmpty)
         .map(generateCode)
         .map(removeNodes)
-        .foreach(println)
+        .foreach(writeModifiedXmls)
     }
   })
+
+  def writeModifiedXmls(in: (File, NodeSeq)) = {
+
+      scala.xml.XML.save(in._1.getAbsolutePath,in._2.head,"UTF-8",true)
+  }
 
   def properFileName(file: File) = file.getAbsolutePath().matches("^.*src.main.resources.*\\.xml$")
 
@@ -76,11 +83,11 @@ object Main extends App {
     (in._1, in._2._1)
   }
 
-  def removeNodes(in: (File, Elem)): Map[File, NodeSeq] = {
+  def removeNodes(in: (File, Elem)): (File, NodeSeq) = {
     val root = in._2
     def transformer(x: Node) = new RuleTransformer(rewrite).transform(x)
     val transformed = root flatMap transformer
-    Map(in._1 -> transformed)
+    (in._1,transformed)
   }
 
 
